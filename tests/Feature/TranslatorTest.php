@@ -2,29 +2,24 @@
 
 namespace Hojabbr\LibretranslateLaravel\Tests\Feature;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 use Hojabbr\LibretranslateLaravel\LibretranslateClient;
 use Hojabbr\LibretranslateLaravel\Tests\TestCase;
 use Hojabbr\LibretranslateLaravel\Translator;
-use Mockery;
 
 class TranslatorTest extends TestCase
 {
-    private LibretranslateClient $mockClient;
+    private MockHandler $mockHandler;
     private Translator $translator;
 
     public function test_it_can_translate_text(): void
     {
-        // Set up mock expectations
-        $this->mockClient
-            ->shouldReceive('request')
-            ->once()
-            ->with('/translate', [
-                'q' => 'Hello',
-                'source' => 'en',
-                'target' => 'es',
-                'format' => 'text',
-            ])
-            ->andReturn(['translatedText' => '¡Hola!']);
+        $this->mockHandler->append(
+            new Response(200, [], json_encode(['translatedText' => '¡Hola!']))
+        );
 
         $result = $this->translator->translate('Hello', 'en', 'es');
 
@@ -36,16 +31,9 @@ class TranslatorTest extends TestCase
         $texts = ['Hello', 'World'];
         $translations = ['¡Hola!', '¡Mundo!'];
 
-        $this->mockClient
-            ->shouldReceive('request')
-            ->once()
-            ->with('/translate', [
-                'q' => $texts,
-                'source' => 'en',
-                'target' => 'es',
-                'format' => 'text',
-            ])
-            ->andReturn(['translatedText' => $translations]);
+        $this->mockHandler->append(
+            new Response(200, [], json_encode(['translatedText' => $translations]))
+        );
 
         $result = $this->translator->translate($texts, 'en', 'es');
 
@@ -54,13 +42,11 @@ class TranslatorTest extends TestCase
 
     public function test_it_can_detect_language(): void
     {
-        $this->mockClient
-            ->shouldReceive('request')
-            ->once()
-            ->with('/detect', ['q' => 'Hello'])
-            ->andReturn([
+        $this->mockHandler->append(
+            new Response(200, [], json_encode([
                 ['confidence' => 90, 'language' => 'en']
-            ]);
+            ]))
+        );
 
         $result = $this->translator->detect('Hello');
 
@@ -75,11 +61,9 @@ class TranslatorTest extends TestCase
             ['code' => 'es', 'name' => 'Spanish'],
         ];
 
-        $this->mockClient
-            ->shouldReceive('request')
-            ->once()
-            ->with('/languages')
-            ->andReturn($expectedLanguages);
+        $this->mockHandler->append(
+            new Response(200, [], json_encode($expectedLanguages))
+        );
 
         $result = $this->translator->languages();
 
@@ -90,16 +74,16 @@ class TranslatorTest extends TestCase
     {
         parent::setUp();
 
-        // Create a mock of LibretranslateClient
-        $this->mockClient = Mockery::mock(LibretranslateClient::class);
+        $this->mockHandler = new MockHandler();
+        $handlerStack = HandlerStack::create($this->mockHandler);
+        $mockClient = new Client(['handler' => $handlerStack]);
 
-        // Create Translator with mock client
-        $this->translator = new Translator($this->mockClient);
-    }
+        $libreTranslateClient = new LibretranslateClient(
+            'https://libretranslate.com',
+            'test-key',
+            $mockClient
+        );
 
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
+        $this->translator = new Translator($libreTranslateClient);
     }
 }

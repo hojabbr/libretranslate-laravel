@@ -11,7 +11,6 @@ use GuzzleHttp\Psr7\Response;
 use Hojabbr\LibretranslateLaravel\Exceptions\TranslationException;
 use Hojabbr\LibretranslateLaravel\LibretranslateClient;
 use Hojabbr\LibretranslateLaravel\Tests\TestCase;
-use Mockery;
 
 class LibretranslateClientTest extends TestCase
 {
@@ -37,7 +36,6 @@ class LibretranslateClientTest extends TestCase
 
     public function test_it_throws_exception_on_invalid_request(): void
     {
-        // Mock a failed response
         $this->mockHandler->append(
             new RequestException(
                 'Error Communicating with Server',
@@ -53,7 +51,6 @@ class LibretranslateClientTest extends TestCase
 
     public function test_it_throws_exception_on_server_error(): void
     {
-        // Mock a server error
         $this->mockHandler->append(
             new Response(500, [], json_encode(['error' => 'Internal Server Error']))
         );
@@ -71,19 +68,10 @@ class LibretranslateClientTest extends TestCase
         $handlerStack = HandlerStack::create($this->mockHandler);
         $this->mockClient = new Client(['handler' => $handlerStack]);
 
-        // Use Mockery to create a partial mock of LibretranslateClient
-        $this->client = Mockery::mock(LibretranslateClient::class)
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
-
-        // Replace the internal HTTP client with our mock
-        $this->client->shouldReceive('createHttpClient')
-            ->andReturn($this->mockClient);
-    }
-
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
+        $this->client = new LibretranslateClient(
+            'https://libretranslate.com',
+            'test-key',
+            $this->mockClient
+        );
     }
 }
