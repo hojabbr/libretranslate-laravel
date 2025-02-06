@@ -1,0 +1,44 @@
+{
+    "name": "hojabbr/libretranslate-laravel",
+    "description": "A Laravel package for LibreTranslate API integration",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hossein Jabbari",
+            "email": "mr.hhkj@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "illuminate/support": "^9.0|^10.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "orchestra/testbench": "^7.0|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hojabbr\\LibretranslateLaravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hojabbr\\LibretranslateLaravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Hojabbr\\LibretranslateLaravel\\LibretranslateServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
